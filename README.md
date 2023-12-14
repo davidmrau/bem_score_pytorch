@@ -3,11 +3,10 @@
 ## Overview
 In the following you will find and example of running the Answer Equivalence BEM score using the **Huggingface Tokenizer** and **Pytorch**.
 
-This requires the following libraries: `torch`, `tensorflow_hub` and `transformers`. For installation:
+This requires the following libraries: `torch`, `tensorflow_hub` and `transformers`. For the installation use pip:
 
 ```
-pip install torch
-pip install tensorflow_hub
+pip install -r requirements.py
 ```
 
 
