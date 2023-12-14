@@ -3,7 +3,7 @@
 ## Overview
 In the following you will find and example of running the Answer Equivalence BEM score using the **Huggingface Tokenizer** and **Pytorch**.
 
-This requires the following libraries: `torch` and `tensorflow_hub`. For installation:
+This requires the following libraries: `torch`, `tensorflow_hub` and `transformers`. For installation:
 
 ```
 pip install torch
@@ -16,6 +16,7 @@ BEM score example:
 
 ```python
 import torch
+from torch.nn import functional as F
 import tensorflow_hub as hub
 from transformers import BertTokenizer
 
@@ -25,13 +26,17 @@ def bertify_example(example, max_length=512):
     question = tokenizer.tokenize(example['question'])
     reference = tokenizer.tokenize(example['reference'])
     candidate = tokenizer.tokenize(example['candidate'])
-
+    
     tokens = ['[CLS]'] + candidate + ['[SEP]'] + reference + ['[SEP]'] + question + ['[SEP]']
     
-    inputs = tokenizer(tokens, padding='max_length', max_length=max_length, truncation=True, return_tensors='pt')
-    inputs = {key: value[0] for key, value in inputs.items()}  # Unpack from batch dimension
+    input_ids = torch.tensor(tokenizer.convert_tokens_to_ids(tokens))
+    segment_ids = torch.tensor([0] * (len(candidate) + 2) + [1] * (len(reference) + 1) + [2] * (len(question) + 1))
 
-    return {'input_ids': inputs['input_ids'], 'segment_ids': inputs['token_type_ids']}
+    input_ids = F.pad(torch.tensor(input_ids), (0, max_length - len(input_ids)), value=0)
+    segment_ids = F.pad(torch.tensor(segment_ids), (0, max_length - len(segment_ids)), value=0)
+    
+    return {'input_ids': input_ids, 'segment_ids': segment_ids}
+
 
 def bertify_examples(examples, max_length=512):
     input_ids = []
@@ -54,19 +59,16 @@ examples = [{
 }]
 
 # Prepare inputs in PyTorch format
-inputs = bertify_examples(examples)
+inputs = bertify_examples(examples, max_length=tokenizer.model_max_length)
 
 # The outputs are raw logits.
 raw_outputs = bem(inputs)
 raw_outputs_torch = torch.from_numpy(raw_outputs.numpy())
-print(raw_outputs_torch)
 # They can be transformed into a classification 'probability' like so:
-bem_score = torch.nn.functional.F.softmax(raw_outputs_torch, dim=0)
-print(bem_score)
+bem_score = float(F.softmax(raw_outputs_torch, dim=1)[:, 1].item())
 
 print(f'BEM score: {bem_score}')
-
-
+del bem
 ```
 
 BEM score: 0.9891803860664368
