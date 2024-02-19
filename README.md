@@ -1,4 +1,4 @@
-# Answer Equivalence BEM Score
+# Answer Equivalence BEM Score in Pytorch
 
 ## Overview
 In the following you will find and example of running the Answer Equivalence BEM score using the **Huggingface Tokenizer** and **Pytorch**.
